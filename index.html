@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>몬티홀 체험 - 바꾸기</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f0f0f5;
+      text-align: center;
+      padding: 2rem;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .doors {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 2rem;
+      perspective: 1000px;
+    }
+
+    .door {
+      font-size: 5rem;
+      cursor: pointer;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .door:hover {
+      transform: scale(1.1);
+    }
+
+    .opened {
+      transform: rotateY(180deg);
+    }
+
+    .stats {
+      margin-top: 2rem;
+      background-color: white;
+      border-radius: 10px;
+      padding: 1rem;
+      display: inline-block;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      font-size: 1.1rem;
+    }
+
+    button {
+      margin: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #34495e;
+    }
+
+    #choiceButtons {
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚪 몬티홀 문제 체험 - 바꾸기</h1>
+<p>문 하나를 선택하세요</p>
+
+<div class="doors">
+  <div class="door" id="door0" onclick="selectDoor(0)">🚪</div>
+  <div class="door" id="door1" onclick="selectDoor(1)">🚪</div>
+  <div class="door" id="door2" onclick="selectDoor(2)">🚪</div>
+</div>
+
+<div id="choiceButtons"></div>
+
+<div id="stats" class="stats">
+  <p>총 시도: 0</p>
+  <p>바꿔서 이김: 0</p>
+  <p>유지해서 이김: 0</p>
+</div>
+
+<button onclick="resetGame()">🔄 다시 하기</button>
+
+<script>
+  let prizes = [];
+  let chosen = null;
+  let revealed = null;
+  let totalTries = 0;
+  let switchWins = 0;
+  let stayWins = 0;
+  let gameEnded = false;
+
+  function shufflePrizes() {
+    prizes = ['🐐', '🚗', '🐐'];
+    prizes.sort(() => Math.random() - 0.5);
+  }
+
+  function selectDoor(index) {
+    if (chosen !== null || gameEnded) return;
+    chosen = index;
+
+    // 사회자가 염소 문 하나 열기
+    const possible = [0, 1, 2].filter(i => i !== chosen && prizes[i] === '🐐');
+    revealed = possible[Math.floor(Math.random() * possible.length)];
+
+    const doorEl = document.getElementById(`door${revealed}`);
+    doorEl.textContent = prizes[revealed];
+    doorEl.classList.add('opened');
+    doorEl.style.opacity = 0.5;
+    doorEl.style.cursor = 'default';
+
+    document.getElementById('choiceButtons').innerHTML = `
+      <p>사회자가 문 ${revealed + 1}을 열었어요. </p>
+      <button onclick="finalChoice(true)">🚗 바꾸기</button>
+      <button onclick="finalChoice(false)">🐐 그대로</button>
+    `;
+  }
+
+  function finalChoice(switching) {
+    if (gameEnded) return;
+
+    const finalChoice = switching
+      ? [0, 1, 2].find(i => i !== chosen && i !== revealed)
+      : chosen;
+
+    const doorEl = document.getElementById(`door${finalChoice}`);
+    doorEl.textContent = prizes[finalChoice];
+    doorEl.classList.add('opened');
+
+    // 나머지 문 잠금
+    [0,1,2].forEach(i => {
+      const el = document.getElementById(`door${i}`);
+      el.style.cursor = 'default';
+    });
+
+    totalTries++;
+    const win = prizes[finalChoice] === '🚗';
+    if (switching && win) switchWins++;
+    if (!switching && win) stayWins++;
+
+    document.getElementById('choiceButtons').innerHTML =
+      `<p>${win ? " 자동차 당첨" : " 염소입니다"}</p>`;
+
+    updateStats();
+    gameEnded = true;
+  }
+
+  function updateStats() {
+    document.getElementById('stats').innerHTML = `
+      <p>총 시도: ${totalTries}</p>
+      <p>바꿔서 이김: ${switchWins} (${(switchWins/totalTries*100 || 0).toFixed(1)}%)</p>
+      <p>유지해서 이김: ${stayWins} (${(stayWins/totalTries*100 || 0).toFixed(1)}%)</p>
+    `;
+  }
+
+  function resetGame() {
+    chosen = null;
+    revealed = null;
+    gameEnded = false;
+    shufflePrizes();
+    document.getElementById('choiceButtons').innerHTML = '';
+    [0,1,2].forEach(i => {
+      const el = document.getElementById(`door${i}`);
+      el.textContent = '🚪';
+      el.classList.remove('opened');
+      el.style.opacity = 1;
+      el.style.cursor = 'pointer';
+    });
+  }
+
+  shufflePrizes();
+</script>
+
+</body>
+</html>
